@@ -39,3 +39,27 @@ COCO panoptic val5k models:
 2	DETR	R101	40.1	33	45.1	download	237Mb
 
 Checkout our panoptic colab to see how to use and visualize DETR's panoptic segmentation prediction.
+
+##Notebooks
+
+We provide a few notebooks in colab to help you get a grasp on DETR:
+
+DETR's hands on Colab Notebook: Shows how to load a model from hub, generate predictions, then visualize the attention of the model (similar to the figures of the paper)
+Standalone Colab Notebook: In this notebook, we demonstrate how to implement a simplified version of DETR from the grounds up in 50 lines of Python, then visualize the predictions. It is a good starting point if you want to gain better understanding the architecture and poke around before diving in the codebase.
+Panoptic Colab Notebook: Demonstrates how to use DETR for panoptic segmentation and plot the predictions.
+
+##Usage - Object detection
+There are no extra compiled components in DETR and package dependencies are minimal, so the code is very simple to use. We provide instructions how to install dependencies via conda. First, clone the repository locally:
+
+git clone https://github.com/facebookresearch/detr.git
+Then, install PyTorch 1.5+ and torchvision 0.6+:
+
+conda install -c pytorch pytorch torchvision
+Install pycocotools (for evaluation on COCO) and scipy (for training):
+conda install cython scipy
+pip install -U 'git+https://github.com/cocodataset/cocoapi.git#subdirectory=PythonAPI'
+
+That's it, should be good to train and evaluate detection models.
+
+(optional) to work with panoptic install panopticapi:
+pip install git+https://github.com/cocodataset/panopticapi.git
