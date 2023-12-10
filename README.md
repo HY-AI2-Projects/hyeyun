@@ -23,3 +23,19 @@ DETR(DETection TRANSformer)을 위한 PyTorch 훈련 코드 및 사전 훈련된
 1	DETR-DC5	R50	500	0.083	43.3	model | logs	159Mb
 2	DETR	R101	500	0.050	43.5	model | logs	232Mb
 3	DETR-DC5	R101	500	0.097	44.9	model | logs	232Mb
+
+
+COCO val5k evaluation results can be found in this gist.
+
+The models are also available via torch hub, to load DETR R50 with pretrained weights simply do:
+
+model = torch.hub.load('facebookresearch/detr:main', 'detr_resnet50', pretrained=True)
+
+COCO panoptic val5k models:
+
+	name	backbone	box AP	segm AP	PQ	url	size
+0	DETR	R50	38.8	31.1	43.4	download	165Mb
+1	DETR-DC5	R50	40.2	31.9	44.6	download	165Mb
+2	DETR	R101	40.1	33	45.1	download	237Mb
+
+Checkout our panoptic colab to see how to use and visualize DETR's panoptic segmentation prediction.
