@@ -1,5 +1,3 @@
-<img src="https://capsule-render.vercel.app/api?type=wave&color=000035&height=10&section=header&text=DETR:End-to-End-Object-Detection-with-Transformers&fontSize=20" />
-
 # DETR:End-to-End-Object-Detection-with-Transformers
 
 DETR(DETection TRANSformer)을 위한 PyTorch 훈련 코드 및 사전 훈련된 모델입니다. 저희는 전체 복잡한 수작업 객체 탐지 파이프라인을 Transformer로 교체하고 Faster R-CNN을 ResNet-50과 일치시켜 절반의 계산 능력(FLOP)과 동일한 수의 매개변수를 사용하여 COCO에서 42개의 AP를 얻습니다. PyTorch의 50개 라인에서 추론합니다.
