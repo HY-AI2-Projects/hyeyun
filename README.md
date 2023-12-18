@@ -1,10 +1,10 @@
 # DETR:End-to-End-Object-Detection-with-Transformers
 
-● 2023-2 인공지능2 기말과제(정혜윤 2020003945)
+- 2023-2 인공지능2 기말과제(정혜윤 2020003945)
 
-● 본 게시물은 DETR 논문을 기반으로, 딥러닝 기초지식이 있는 초보자들이 DETR 모델에 대해 보다 쉽게 이해할 수 있도록 작성한 문서입니다.
+- 본 게시물은 DETR 논문을 기반으로, 딥러닝 기초지식이 있는 초보자들이 DETR 모델에 대해 보다 쉽게 이해할 수 있도록 작성한 문서입니다.
 
-● 논문 원본과 예시 코드를 추가 자료로 첨부하였습니다.
+- 논문 원본과 예시 코드를 추가 자료로 첨부하였습니다.
 
 
 ## 🏷️ Introduction
@@ -32,349 +32,270 @@ DETR(End-to-End Object Detection with Transformers)은 Facebook Research 팀이 
 (2) 한 번의 forward pass로 object model 사이의 relation을 예측하는 architecture
 
 
-1. Object detection set prediction loss
+**1. Object detection set prediction loss**
+
+DETR은 먼저 충분히 큰 N개 종류의 predictions이 이루어진다고 가정합니다. 그러고 나서 예측된 값과 실제값을 이분 매칭하게되고, 이를 최적화하게 됩니다. 이를 위한 수식은 다음과 같습니다.
+
    
-![image](https://github.com/hyeyun0302/DETR_End-to-End-Object-Detection-with-Transformers/assets/104217871/d0e32cc8-52f6-42a4-a13d-43e73d608e2b)
-
-먼저 첫 번째 조건 (1)을 충족하기 위해 loss를 계산하는 과정은 두 단계로 구분됩니다. 첫 번째로, predicted bounding box와 ground truth box 사이의 unique한 matching을 수행하는 과정입니다. 두 번째 단계에서는 matching된 결과를 기반으로 hungarian loss를 연산합니다. 이 중 먼저 첫 번째 단계부터 살펴보겠습니다. 
-
-1.1 Find optimal matching 
-
-기존의 연구는 수 천개의 anchor를 생성하여, 객체를 예측하기 위한 proposal로 사용하는데 이는 객체가 “얼마나” 있는지 알 수 없기 때문입니다. 본 논문에서 제안한 DETR은 고정된 크기의 
-N
-개의 prediction만을 수행함으로써, 수많은 anchor를 생성하는 과정을 우회합니다. 이 때 
-N
-은 일반적으로 이미지 내 존재하는 객체의 수보다 훨씬 더 큰 수로 지정했습니다. 즉, 이는 DETR을 통해 예측하는 객체의 수는 최대 
-N
-개임을 의미합니다. 이를 통해 적은 수의 prediction이 생성되어, ground truth와의 unique matching을 상대적으로 쉽게 수행할 수 있습니다.
+![image](https://github.com/HY-AI2-Projects/hyeyun/assets/104217871/ee77aaae-72d0-4ed0-956d-bfdd7bfd8185)
 
 
+수식을 살펴보면, y hat 값은 예측값 집합, 그냥 y 값은 실제값 집합입니다. 그래서 매칭 loss 값의 합을 가장 작게 만들어주는 sigma를 찾아주면 되는데, 여기서 sigma는 말 그대로 매칭된 결과로 볼 수 있겠습니다.
+매칭된 loss 값은 pair-wise한 matching cost입니다.
+결과적으로 sigma를 찾는 task는 최적 할당 문제로 생각할 수 있고, 다시 말해 가중 이분 매칭입니다. 이는 Hungarian algorithm에 따라 이루어집니다.
+해당 Task를 수행하면서 결과적으로 생성되는 output은 Class와 Bounding boxes가 나옵니다. 그리고 Bounding box는 일반적으로 중심 좌표, 높이, 너비에 대한 정보를 담습니다. 본 논문에서는 Bounding box 관련 값들을 0과 1 사이로 normalize 합니다.
+
+매칭된 loss 값의 수식도 존재하는데, 이는 다음과 같습니다.
 
 
-이는 이분 매칭을 통해 고유한 예측을 강제하는 집합 기반 전역 손실과 Transformer encoder-decoder 아키텍처로 구성됩니다. 학습된 객체 쿼리의 고정된 작은 집합이 주어지면 객체의 관계와 글로벌 이미지 컨텍스트가 최종 예측 집합을 직접 병렬로 출력해야 하는 이유가 됩니다. 이러한 병렬 특성으로 인해 DETR은 매우 빠르고 효율적입니다.
-
-객체 검출이 분류보다 어렵지 않고, 훈련과 추론을 위해 복잡한 라이브러리를 필요로 해서는 안 된다고 생각합니다. DETR은 구현과 실험이 매우 간단하며, 저희는 DETR로 추론하는 방법을 PyTorch 코드의 몇 가지 라인에서만 보여주는 독립형 Colab Notebook을 제공합니다. 훈련 코드는 라이브러리가 아니라 표준 훈련 루프를 가진 main.py 가져오기 모델 및 기준 정의라는 아이디어를 따릅니다.
+![image](https://github.com/HY-AI2-Projects/hyeyun/assets/104217871/f14f88fd-c1f8-4938-8130-1cd433f25bc7)
 
 
-저희는 기본 DETR 및 DETR-DC5 모델을 제공하며, 향후 더 많은 모델을 포함할 계획입니다. AP는 COCO 2017 val5k에서 계산되며, 토치스크립트 변환기를 사용하여 처음 100 val5k COCO 이미지 이상의 추론 시간을 갖습니다.
+이는 class가 잘 맞고, bounding box 또한 잘 맞혔다면 Loss 값이 줄어드는 형태를 띕니다.
+
+Bounding box에 대한 Loss 수식은 다음과 같습니다.
 
 
-	name	backbone	schedule	inf_time	box AP	url	size
-0	DETR	R50	500	0.036	42.0	model | logs	159Mb
-1	DETR-DC5	R50	500	0.083	43.3	model | logs	159Mb
-2	DETR	R101	500	0.050	43.5	model | logs	232Mb
-3	DETR-DC5	R101	500	0.097	44.9	model | logs	232Mb
+![image](https://github.com/HY-AI2-Projects/hyeyun/assets/104217871/1aaa24c5-8946-4355-aa6c-cabf8678c5fd)
 
 
-COCO val5k 평가 결과는 이 요지에서 확인할 수 있습니다.
+전자, 즉 iou에 대한 Loss는 크기와 상관없이 bounding box를 많이 겹칠 수 있도록 해줍니다. 그리고 L1에 대한 Loss 값 또한 두 개의 bounding box가 유사해지도록 하는 역할을 수행합니다. 대신 크기에 영향을 받곤 합니다. 위에서 살펴본 이분 매칭을 통해 기존 region proposal 혹은 anchor와 같은 heuristic한 방법론과도 잘 맞는다는 것을 알 수 있습니다. 이분 매칭의 결과로 set prediction의 중복된 결과를 피할 수 있게 됩니다.
 
-이 모델은 토치 허브를 통해서도 사용할 수 있으며, 사전 교육된 중량으로 DERTR50을 로드할 수 있습니다:
+앞서 말한 내용을 종합한 전체 Hungarian Loss는 다음과 같이 정리가 가능합니다.
 
+
+![image](https://github.com/HY-AI2-Projects/hyeyun/assets/104217871/5d3493be-af6f-4592-9380-0b0b47e29aa4)
+
+
+
+**2. DETR architecture**
+
+![image](https://github.com/HY-AI2-Projects/hyeyun/assets/104217871/db04ce4c-a7a2-4c7a-bf26-04a95e76ddff)
+
+DETR은 ***1) CNN backbone, 2) Transformer encoder, 3) Transformer decoder, 4) FFN(Feed Forward Network)*** 로 구성되어 있습니다. 
+
+***1) CNN backbone***
+
+   먼저 입력이미지 ![image](https://github.com/HY-AI2-Projects/hyeyun/assets/104217871/ac728a3f-3d18-4db3-ab6d-d994a2da5330)를 CNN backbone network에 입력하여, feature map ![image](https://github.com/HY-AI2-Projects/hyeyun/assets/104217871/1a2d1148-4f75-421a-a0a3-21fc8b0f2ae6)를 생성합니다. 이 때 C=2048이며, ![image](https://github.com/HY-AI2-Projects/hyeyun/assets/104217871/8722aad0-ea09-4fb8-a09d-35526dd13ecf) 입니다. 
+
+  
+***2) Transformer encoder***
+
+이후 1x1 convolution 연산을 적용하여, C차원의 feature map을 d차원으로 감소시켜 새로운 feature map![image](https://github.com/HY-AI2-Projects/hyeyun/assets/104217871/e37fc70c-9a4d-471d-8092-a381e1673d19) 을 생성합니다. Transformer encoder는 sequence를 입력으로 받기 때문에 z0의 spatial dimension을 collapse(=flatten)하여 크기를 d×HW로 변경시켜줍니다. 각 encoder layer는 multi-head self-atttention module과 feed forward network(FFN)으로 구성되어 있습니다. Transformer 구조는 입력 embedding의 순서와 상관없이 같은 출력값을 생성하는 permutation-invariant 속성이 있기 때문에 encoder layer 입력 전에 입력 embedding에 positional encoding을 더해줍니다. 
+
+   
+***3) Transformer decoder***
+
+Transformer decoder는 masking을 통해 다음 token을 예측하는 autoregressive 방법을 사용하는 반면, DETR의 decoder는 N개의 object에 대한 정보를 한번에 출력합니다. Decoder 역시 permutation-invariant하기 때문에 입력으로 받는 embedding으로 object queries라고 불리는 learnt positional encoding을 사용합니다.
+object query는 object query feature과 object query positional embedding으로 구성되어 있습니다. object query feature는 decoder에 initial input으로 사용되어, decoder layer를 거치면서 학습됩니다. query positional embedding은 decoder layer에서 attention 연산 시 모든 query feature에 더해집니다. query feature는 학습 시작 시 0으로 초기화(zero-initialized)되며, query positional embedding은 학습 가능(learnable)합니다. 이러한 object queries는 길이가 N으로, decoder에 의해 output embedding으로 변환(transform)되며 이후 FFN을 통해 각각 독립적으로(independently) box coordinate와 class label로 decode됩니다. 이는 각각의 object query는 하나의 객체를 예측하는 region proposal에 대응된다고 볼 수  있습니다. 즉, object queries는 N개의 객체를 예측하기 위한 일종의 prior knowledge로도 볼 수 있습니다.
+encoder와 유사하게 object query를 각 attention layer의 입력에 더해줍니다. 이 때 embedding은 self-attention과 encoder-decoder attention을 통해 이미지 내 전체 context에 대한 정보를 사용합니다. 이를 통해 객체 사이의 pair-wise relation을 포착하여 객체간의 전역적(global)인 정보를 모델링하는 것이 가능해집니다. 
+
+   
+***4) FFN(Feed Forward Network)***
+
+Decoder에서 출력한 output embedding을 3개의 linear layer와 ReLU activation function으로 구성된 FFN에 입력하여 최종 예측을 수행합니다. FFN은 이미지에 대한 class label과 bounding box에 좌표(normalized center coordinate, width, height)를 예측합니다. 이 때 예측하는 class label 중 ∅은 객체가 포착되지 않은 경우로, "background" class를 의미합니다.
+
+추가적으로 본 논문에서는 Auxiliary decoding losses를 사용해서 성능을 높였다고 합니다.
+
+
+## 🏷️ Model Zoo
+
+
+저자들은 우선 Object Detection baseline으로 DETR과 DETR-DC5 모델을 제공합니다. 성능(AP) 은 COCO 2017 val5k을 사용해 평가했으며, 실행 시간(Inference Time) 은 첫 100개의 이미지에 대해 측정됩니다.
+
+<table>
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>name</th>
+      <th>backbone</th>
+      <th>schedule</th>
+      <th>inf_time</th>
+      <th>box AP</th>
+      <th>url</th>
+      <th>size</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>DETR</td>
+      <td>R50</td>
+      <td>500</td>
+      <td>0.036</td>
+      <td>42.0</td>
+      <td><a href="https://dl.fbaipublicfiles.com/detr/detr-r50-e632da11.pth">model</a>&nbsp;|&nbsp;<a href="https://dl.fbaipublicfiles.com/detr/logs/detr-r50_log.txt">logs</a></td>
+      <td>159Mb</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>DETR-DC5</td>
+      <td>R50</td>
+      <td>500</td>
+      <td>0.083</td>
+      <td>43.3</td>
+      <td><a href="https://dl.fbaipublicfiles.com/detr/detr-r50-dc5-f0fb7ef5.pth">model</a>&nbsp;|&nbsp;<a href="https://dl.fbaipublicfiles.com/detr/logs/detr-r50-dc5_log.txt">logs</a></td>
+      <td>159Mb</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>DETR</td>
+      <td>R101</td>
+      <td>500</td>
+      <td>0.050</td>
+      <td>43.5</td>
+      <td><a href="https://dl.fbaipublicfiles.com/detr/detr-r101-2c7b67e5.pth">model</a>&nbsp;|&nbsp;<a href="https://dl.fbaipublicfiles.com/detr/logs/detr-r101_log.txt">logs</a></td>
+      <td>232Mb</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>DETR-DC5</td>
+      <td>R101</td>
+      <td>500</td>
+      <td>0.097</td>
+      <td>44.9</td>
+      <td><a href="https://dl.fbaipublicfiles.com/detr/detr-r101-dc5-a2e86def.pth">model</a>&nbsp;|&nbsp;<a href="https://dl.fbaipublicfiles.com/detr/logs/detr-r101-dc5_log.txt">logs</a></td>
+      <td>232Mb</td>
+    </tr>
+  </tbody>
+</table>
+
+
+이 모델은 torch hub를 통해서 사용할 수 있습니다. 
+
+```python
 model = torch.hub.load('facebookresearch/detr:main', 'detr_resnet50', pretrained=True)
+```
 
-COCO panoptic val5k models:
-
-	name	backbone	box AP	segm AP	PQ	url	size
-0	DETR	R50	38.8	31.1	43.4	download	165Mb
-1	DETR-DC5	R50	40.2	31.9	44.6	download	165Mb
-2	DETR	R101	40.1	33	45.1	download	237Mb
+또한, Panoptic segmentation 모델도 제공합니다.
 
 
-##Notebooks
+<table>
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>name</th>
+      <th>backbone</th>
+      <th>box AP</th>
+      <th>segm AP</th>
+      <th>PQ</th>
+      <th>url</th>
+      <th>size</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>DETR</td>
+      <td>R50</td>
+      <td>38.8</td>
+      <td>31.1</td>
+      <td>43.4</td>
+      <td><a href="https://dl.fbaipublicfiles.com/detr/detr-r50-panoptic-00ce5173.pth">download</a></td>
+      <td>165Mb</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>DETR-DC5</td>
+      <td>R50</td>
+      <td>40.2</td>
+      <td>31.9</td>
+      <td>44.6</td>
+      <td><a href="https://dl.fbaipublicfiles.com/detr/detr-r50-dc5-panoptic-da08f1b1.pth">download</a></td>
+      <td>165Mb</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>DETR</td>
+      <td>R101</td>
+      <td>40.1</td>
+      <td>33</td>
+      <td>45.1</td>
+      <td><a href="https://dl.fbaipublicfiles.com/detr/detr-r101-panoptic-40021d53.pth">download</a></td>
+      <td>237Mb</td>
+    </tr>
+  </tbody>
+</table>
 
-DETR에 대한 이해를 돕기 위해 몇 가지 노트북을 콜라브로 제공합니다:
 
-DETR의 Colab 노트북 활용: 허브에서 모델을 로드하고 예측을 생성한 다음 모델의 주의력을 시각화하는 방법을 보여줍니다(논문의 그림과 유사)
-독립형 콜랩 노트북: 이 노트북에서는 DETR의 단순화된 버전을 50줄의 파이썬으로 구현한 다음 예측을 시각화하는 방법을 시연합니다. 코드베이스에 들어가기 전에 아키텍처를 더 잘 이해하고 주변을 돌아다녀야 한다면 좋은 출발점이 될 것입니다.
-Panoptic Colab 노트북: Panoptic 분할 및 plo를 위해 DETR을 사용하는 방법을 시연합니다t the predictions.
+## 🏷️ Notebooks
 
-##Usage - Object detection
-DRIG에는 컴파일된 추가 구성 요소가 없고 패키지 종속성이 최소이므로 코드 사용이 매우 간단합니다. 저희는 콘다를 통해 종속성을 설치하는 방법을 안내합니다. 먼저 저장소를 로컬로 복제합니다:
+저자들은 DETR에 대한 이해를 돕기 위해 colab에서 몇 가지의 notebook을 제공합니다.
 
+* [DETR's hands on Colab Notebook](https://colab.research.google.com/github/facebookresearch/detr/blob/colab/notebooks/detr_attention.ipynb):
+  
+1. hub에서 모델을 불러오는 방법
+2. 예측을 생성하는 방법
+3. 모델의 attention을 시각화하는 방법(논문의 figure와 유사)
+
+
+* [Standalone Colab Notebook](https://colab.research.google.com/github/facebookresearch/detr/blob/colab/notebooks/detr_demo.ipynb):
+  
+1. 가장 간단한 버전의 DETR을 50 lines of python code로 실행하는 방법
+2. 예측을 시각화하는 방법
+
+
+* [Panoptic Colab Notebook](https://colab.research.google.com/github/facebookresearch/detr/blob/colab/notebooks/DETR_panoptic.ipynb):
+  
+1. Panoptic segmentation을 위한 DETR을 사용하는 방법
+2. 예측을 시각화하는 방법
+
+
+## 🏷️ Usage - Object detection
+
+DETR은 위에서 기술했던 대로 기존의 패키지들에 크게 의존적이지 않습니다. 전반적인 설치 파이프라인은 아래와 같습니다.
+
+1. Repository clone:
+```
 git clone https://github.com/facebookresearch/detr.git
-install PyTorch 1.5+ and torchvision 0.6+:
-
+```
+2. install PyTorch 1.5+ and torchvision 0.6+:
+```
 conda install -c pytorch pytorch torchvision
-Install pycocotools (for evaluation on COCO) and scipy (for training):
+```
+3. Install pycocotools (for evaluation on COCO) and scipy (for training):
+```
 conda install cython scipy
 pip install -U 'git+https://github.com/cocodataset/cocoapi.git#subdirectory=PythonAPI'
+```
+pycocotolls는 COCO dataset에 evaluation을 하기 위한 툴입니다.
 
-detection 모델을 훈련하고 평가합니다.
-
-(optional) to work with panoptic install panopticapi:
+(optional) install panopticapi:
+```
 pip install git+https://github.com/cocodataset/panopticapi.git
-
-
-<div align="center">
-  <img src="./assets/logo_2.png" width="30%">
-</div>
-<h2 align="center">🦖detrex: Benchmarking Detection Transformers</h2>
-<p align="center">
-    <a href="https://github.com/IDEA-Research/detrex/releases">
-        <img alt="release" src="https://img.shields.io/github/v/release/IDEA-Research/detrex">
-    </a>
-    <a href="https://detrex.readthedocs.io/en/latest/index.html">
-        <img alt="docs" src="https://img.shields.io/badge/docs-latest-blue">
-    </a>
-    <a href='https://detrex.readthedocs.io/en/latest/?badge=latest'>
-    <img src='https://readthedocs.org/projects/detrex/badge/?version=latest' alt='Documentation Status' />
-    </a>
-    <a href="https://github.com/IDEA-Research/detrex/blob/main/LICENSE">
-        <img alt="GitHub" src="https://img.shields.io/github/license/IDEA-Research/detrex.svg?color=blue">
-    </a>
-    <a href="https://github.com/IDEA-Research/detrex/pulls">
-        <img alt="PRs Welcome" src="https://img.shields.io/badge/PRs-welcome-pink.svg">
-    </a>
-    <a href="https://github.com/IDEA-Research/detrex/issues">
-        <img alt="open issues" src="https://img.shields.io/github/issues/IDEA-Research/detrex">
-    </a>
-</p>
-
-
-<div align="center">
-
-<!-- <a href="https://arxiv.org/abs/2306.07265">📚Read detrex Benchmarking Paper</a> <sup><i><font size="3" color="#FF0000">New</font></i></sup> |
-<a href="https://rentainhe.github.io/projects/detrex/">🏠Project Page</a> <sup><i><font size="3" color="#FF0000">New</font></i></sup> |  [🏷️Cite detrex](#citation) -->
-
-[📚Read detrex Benchmarking Paper](https://arxiv.org/abs/2306.07265) | [🏠Project Page](https://rentainhe.github.io/projects/detrex/) | [🏷️Cite detrex](#citation) | [🚢DeepDataSpace](https://github.com/IDEA-Research/deepdataspace)
-
-</div>
-
-
-<div align="center">
-
-[📘Documentation](https://detrex.readthedocs.io/en/latest/index.html) |
-[🛠️Installation](https://detrex.readthedocs.io/en/latest/tutorials/Installation.html) |
-[👀Model Zoo](https://detrex.readthedocs.io/en/latest/tutorials/Model_Zoo.html) |
-[🚀Awesome DETR](https://github.com/IDEA-Research/awesome-detection-transformer) |
-[🆕News](#whats-new) |
-[🤔Reporting Issues](https://github.com/IDEA-Research/detrex/issues/new/choose)
-
-</div>
-
-
-## Introduction
-
-detrex is an open-source toolbox that provides state-of-the-art Transformer-based detection algorithms. It is built on top of [Detectron2](https://github.com/facebookresearch/detectron2) and its module design is partially borrowed from [MMDetection](https://github.com/open-mmlab/mmdetection) and [DETR](https://github.com/facebookresearch/detr). Many thanks for their nicely organized code. The main branch works with **Pytorch 1.10+** or higher (we recommend **Pytorch 1.12**).
-
-<div align="center">
-  <img src="./assets/detr_arch.png" width="100%"/>
-</div>
-
-<details open>
-<summary> Major Features </summary>
-
-- **Modular Design.** detrex decomposes the Transformer-based detection framework into various components which help users easily build their own customized models.
-
-- **Strong Baselines.** detrex provides a series of strong baselines for Transformer-based detection models. We have further boosted the model performance from **0.2 AP** to **1.1 AP** through optimizing hyper-parameters among most of the supported algorithms.
-
-- **Easy to Use.** detrex is designed to be **light-weight** and easy for users to use:
-  - [LazyConfig System](https://detectron2.readthedocs.io/en/latest/tutorials/lazyconfigs.html) for more flexible syntax and cleaner config files.
-  - Light-weight [training engine](./tools/train_net.py) modified from detectron2 [lazyconfig_train_net.py](https://github.com/facebookresearch/detectron2/blob/main/tools/lazyconfig_train_net.py)
-
-Apart from detrex, we also released a repo [Awesome Detection Transformer](https://github.com/IDEA-Research/awesome-detection-transformer) to present papers about Transformer for detection and segmentation.
-
-</details>
-
-## Fun Facts
-The repo name detrex has several interpretations:
-- <font color=blue> <b> detr-ex </b> </font>: We take our hats off to DETR and regard this repo as an extension of Transformer-based detection algorithms.
-
-- <font color=#db7093> <b> det-rex </b> </font>: rex literally means 'king' in Latin. We hope this repo can help advance the state of the art on object detection by providing the best Transformer-based detection algorithms from the research community.
-
-- <font color=#008000> <b> de-t.rex </b> </font>: de means 'the' in Dutch. T.rex, also called Tyrannosaurus Rex, means 'king of the tyrant lizards' and connects to our research work 'DINO', which is short for Dinosaur.
-
-## What's New
-v0.5.0 was released on 16/07/2023:
-- Support [Focus-DETR (ICCV'2023)](./projects/focus_detr/).
-- Support [SQR-DETR (CVPR'2023)](https://github.com/IDEA-Research/detrex/tree/main/projects/sqr_detr), credits to [Fangyi Chen](https://github.com/Fangyi-Chen)
-- Support [Align-DETR (ArXiv'2023)](./projects/align_detr/), credits to [Zhi Cai](https://github.com/FelixCaae)
-- Support [EVA-01 (CVPR'2023 Highlight)](https://github.com/baaivision/EVA/tree/master/EVA-01) and [EVA-02 (ArXiv'2023)](https://github.com/baaivision/EVA/tree/master/EVA-02) backbones, please check [DINO-EVA](./projects/dino_eva/) for more benchmarking results.
-
-Please see [changelog.md](./changlog.md) for details and release history.
-
-## Installation
-
-Please refer to [Installation Instructions](https://detrex.readthedocs.io/en/latest/tutorials/Installation.html) for the details of installation.
-
-## Getting Started
-
-Please refer to [Getting Started with detrex](https://detrex.readthedocs.io/en/latest/tutorials/Getting_Started.html) for the basic usage of detrex. We also provides other tutorials for:
-- [Learn about the config system of detrex](https://detrex.readthedocs.io/en/latest/tutorials/Config_System.html)
-- [How to convert the pretrained weights from original detr repo into detrex format](https://detrex.readthedocs.io/en/latest/tutorials/Converters.html)
-- [Visualize your training data and testing results on COCO dataset](https://detrex.readthedocs.io/en/latest/tutorials/Tools.html#visualization)
-- [Analyze the model under detrex](https://detrex.readthedocs.io/en/latest/tutorials/Tools.html#model-analysis)
-- [Download and initialize with the pretrained backbone weights](https://detrex.readthedocs.io/en/latest/tutorials/Using_Pretrained_Backbone.html)
-- [Frequently asked questions](https://github.com/IDEA-Research/detrex/issues/109)
-- [A simple onnx convert tutorial provided by powermano](https://github.com/IDEA-Research/detrex/issues/192)
-- Simple training techniques: [Model-EMA](https://github.com/IDEA-Research/detrex/pull/201), [Mixed Precision Training](https://github.com/IDEA-Research/detrex/pull/198), [Activation Checkpoint](https://github.com/IDEA-Research/detrex/pull/200)
-- [Simple tutorial about custom dataset training](https://github.com/IDEA-Research/detrex/pull/187)
-
-Although some of the tutorials are currently presented with relatively simple content, we will constantly improve our documentation to help users achieve a better user experience.
-
-## Documentation
-
-Please see [documentation](https://detrex.readthedocs.io/en/latest/index.html) for full API documentation and tutorials.
-
-## Model Zoo
-Results and models are available in [model zoo](https://detrex.readthedocs.io/en/latest/tutorials/Model_Zoo.html).
-
-<details open>
-<summary> Supported methods </summary>
-
-- [x] [DETR (ECCV'2020)](./projects/detr/)
-- [x] [Deformable-DETR (ICLR'2021 Oral)](./projects/deformable_detr/)
-- [x] [PnP-DETR (ICCV'2021)](./projects/pnp_detr/)
-- [x] [Conditional-DETR (ICCV'2021)](./projects/conditional_detr/)
-- [x] [Anchor-DETR (AAAI 2022)](./projects/anchor_detr/)
-- [x] [DAB-DETR (ICLR'2022)](./projects/dab_detr/)
-- [x] [DAB-Deformable-DETR (ICLR'2022)](./projects/dab_deformable_detr/)
-- [x] [DN-DETR (CVPR'2022 Oral)](./projects/dn_detr/)
-- [x] [DN-Deformable-DETR (CVPR'2022 Oral)](./projects/dn_deformable_detr/)
-- [x] [Group-DETR (ICCV'2023)](./projects/group_detr/)
-- [x] [DETA (ArXiv'2022)](./projects/deta/)
-- [x] [DINO (ICLR'2023)](./projects/dino/)
-- [x] [H-Deformable-DETR (CVPR'2023)](./projects/h_deformable_detr/)
-- [x] [MaskDINO (CVPR'2023)](./projects/maskdino/)
-- [x] [CO-MOT (ArXiv'2023)](./projects/co_mot/)
-- [x] [SQR-DETR (CVPR'2023)](./projects/sqr_detr/)
-- [x] [Align-DETR (ArXiv'2023)](./projects/align_detr/)
-- [x] [EVA-01 (CVPR'2023 Highlight)](./projects/dino_eva/)
-- [x] [EVA-02 (ArXiv'2023)](./projects/dino_eva/)
-- [x] [Focus-DETR (ICCV'2023)](./projects/focus_detr/)
-
-Please see [projects](./projects/) for the details about projects that are built based on detrex.
-
-</details>
-
-
-## License
-
-This project is released under the [Apache 2.0 license](LICENSE).
-
-
-## Acknowledgement
-- detrex is an open-source toolbox for Transformer-based detection algorithms created by researchers of **IDEACVR**. We appreciate all contributions to detrex!
-- detrex is built based on [Detectron2](https://github.com/facebookresearch/detectron2) and part of its module design is borrowed from [MMDetection](https://github.com/open-mmlab/mmdetection), [DETR](https://github.com/facebookresearch/detr), and [Deformable-DETR](https://github.com/fundamentalvision/Deformable-DETR).
-
-
-## Citation
-If you use this toolbox in your research or wish to refer to the baseline results published here, please use the following BibTeX entries:
-
-- Citing **detrex**:
-
-```BibTeX
-@misc{ren2023detrex,
-      title={detrex: Benchmarking Detection Transformers}, 
-      author={Tianhe Ren and Shilong Liu and Feng Li and Hao Zhang and Ailing Zeng and Jie Yang and Xingyu Liao and Ding Jia and Hongyang Li and He Cao and Jianan Wang and Zhaoyang Zeng and Xianbiao Qi and Yuhui Yuan and Jianwei Yang and Lei Zhang},
-      year={2023},
-      eprint={2306.07265},
-      archivePrefix={arXiv},
-      primaryClass={cs.CV}
-}
 ```
 
-<details>
-<summary> Citing Supported Algorithms </summary>
+## 🏷️ Data preparation
 
-```BibTex
-@inproceedings{carion2020end,
-  title={End-to-end object detection with transformers},
-  author={Carion, Nicolas and Massa, Francisco and Synnaeve, Gabriel and Usunier, Nicolas and Kirillov, Alexander and Zagoruyko, Sergey},
-  booktitle={European conference on computer vision},
-  pages={213--229},
-  year={2020},
-  organization={Springer}
-}
+본 연구에서 대표적으로 사용한 dataset은 COCO 2017입니다. 주석(annotation)이 포함된 train/val image는
+[http://cocodataset.org](http://cocodataset.org/#download)에서 다운받을 수 있습니다. 해당 dataset의 structure는 아래와 같아야 합니다.
 
-@inproceedings{
-  zhu2021deformable,
-  title={Deformable {\{}DETR{\}}: Deformable Transformers for End-to-End Object Detection},
-  author={Xizhou Zhu and Weijie Su and Lewei Lu and Bin Li and Xiaogang Wang and Jifeng Dai},
-  booktitle={International Conference on Learning Representations},
-  year={2021},
-  url={https://openreview.net/forum?id=gZ9hCDWe6ke}
-}
-
-@inproceedings{meng2021-CondDETR,
-  title       = {Conditional DETR for Fast Training Convergence},
-  author      = {Meng, Depu and Chen, Xiaokang and Fan, Zejia and Zeng, Gang and Li, Houqiang and Yuan, Yuhui and Sun, Lei and Wang, Jingdong},
-  booktitle   = {Proceedings of the IEEE International Conference on Computer Vision (ICCV)},
-  year        = {2021}
-}
-
-@inproceedings{
-  liu2022dabdetr,
-  title={{DAB}-{DETR}: Dynamic Anchor Boxes are Better Queries for {DETR}},
-  author={Shilong Liu and Feng Li and Hao Zhang and Xiao Yang and Xianbiao Qi and Hang Su and Jun Zhu and Lei Zhang},
-  booktitle={International Conference on Learning Representations},
-  year={2022},
-  url={https://openreview.net/forum?id=oMI9PjOb9Jl}
-}
-
-@inproceedings{li2022dn,
-  title={Dn-detr: Accelerate detr training by introducing query denoising},
-  author={Li, Feng and Zhang, Hao and Liu, Shilong and Guo, Jian and Ni, Lionel M and Zhang, Lei},
-  booktitle={Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition},
-  pages={13619--13627},
-  year={2022}
-}
-
-@inproceedings{
-  zhang2023dino,
-  title={{DINO}: {DETR} with Improved DeNoising Anchor Boxes for End-to-End Object Detection},
-  author={Hao Zhang and Feng Li and Shilong Liu and Lei Zhang and Hang Su and Jun Zhu and Lionel Ni and Heung-Yeung Shum},
-  booktitle={The Eleventh International Conference on Learning Representations },
-  year={2023},
-  url={https://openreview.net/forum?id=3mRwyG5one}
-}
-
-@InProceedings{Chen_2023_ICCV,
-  author    = {Chen, Qiang and Chen, Xiaokang and Wang, Jian and Zhang, Shan and Yao, Kun and Feng, Haocheng and Han, Junyu and Ding, Errui and Zeng, Gang and Wang, Jingdong},
-  title     = {Group DETR: Fast DETR Training with Group-Wise One-to-Many Assignment},
-  booktitle = {Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV)},
-  month     = {October},
-  year      = {2023},
-  pages     = {6633-6642}
-}
-
-@InProceedings{Jia_2023_CVPR,
-  author    = {Jia, Ding and Yuan, Yuhui and He, Haodi and Wu, Xiaopei and Yu, Haojun and Lin, Weihong and Sun, Lei and Zhang, Chao and Hu, Han},
-  title     = {DETRs With Hybrid Matching},
-  booktitle = {Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)},
-  month     = {June},
-  year      = {2023},
-  pages     = {19702-19712}
-}
-
-@InProceedings{Li_2023_CVPR,
-  author    = {Li, Feng and Zhang, Hao and Xu, Huaizhe and Liu, Shilong and Zhang, Lei and Ni, Lionel M. and Shum, Heung-Yeung},
-  title     = {Mask DINO: Towards a Unified Transformer-Based Framework for Object Detection and Segmentation},
-  booktitle = {Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)},
-  month     = {June},
-  year      = {2023},
-  pages     = {3041-3050}
-}
-
-@article{yan2023bridging,
-  title={Bridging the Gap Between End-to-end and Non-End-to-end Multi-Object Tracking},
-  author={Yan, Feng and Luo, Weixin and Zhong, Yujie and Gan, Yiyang and Ma, Lin},
-  journal={arXiv preprint arXiv:2305.12724},
-  year={2023}
-}
-
-@InProceedings{Chen_2023_CVPR,
-  author    = {Chen, Fangyi and Zhang, Han and Hu, Kai and Huang, Yu-Kai and Zhu, Chenchen and Savvides, Marios},
-  title     = {Enhanced Training of Query-Based Object Detection via Selective Query Recollection},
-  booktitle = {Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)},
-  month     = {June},
-  year      = {2023},
-  pages     = {23756-23765}
-}
+```
+path/to/coco/
+  annotations/  # annotation json files
+  train2017/    # train images
+  val2017/      # val images
 ```
 
+## 🏷️ Training
+예시로 node 당 8 gpus를 사용해 300 epoch을 학습시킬 경우 아래와 같은 명령어를 사용하면 됩니다.:
+```
+python -m torch.distributed.launch --nproc_per_node=8 --use_env main.py --coco_path /path/to/coco 
+```
+1 epoch은 28분 정도 걸리기에, 300 epoch은 6일정도 걸릴 수 있습니다(V100 기준).
+결과 재생산을 용이하기 하기 위해 저자들은 150 epoch schedule에 대한 results and training logs
+[results and training logs](https://gist.github.com/szagoruyko/b4c3b2c3627294fc369b899987385a3f)를 제공합니다(39.5/60.3 AP/AP50).
 
-</details>
+저자들은 transformer를 학습하는 데 1e-4의 학습률을, backbone을 학습하는데 1e-5의 학습률을 적용한 AdamW을 DETR 학습에 적용합니다. Augmentaiton을 위해 Horizontal flips, scales, crops가 쓰였습니다. 이미지들은 최소 800, 최대 1333의 size를 갖게끔 rescaled됩니다. Transformer는 0.1의 dropout을, 전체 모델은 0.1의 grad clip을 사용해 학습됩니다.
 
 
+## 🏷️ Evaluation
+DETR R50을 COCO val5k에 대해 평가하고 싶으면 아래와 같은 명령어를 실행하면 됩니다.:
+```
+python main.py --batch_size 2 --no_aux_loss --eval --resume https://dl.fbaipublicfiles.com/detr/detr-r50-e632da11.pth --coco_path /path/to/coco
+```
+모든 DETR detection model에 대한 평가 결과는 제공합니다.[gist](https://gist.github.com/szagoruyko/9c9ebb8455610958f7deaa27845d7918).
+단, GPU 당 batch size(number of images)에 따라 결과가 상당히 변합니다. 예를 들어, batch size 1로 학습한 DC5 모델의 경우 GPU 당 1개 이상의 이미지를 사용해 평가할 경우 성능이 굉장히 낮게 나옵니다.
 
+## 🏷️ Reference 
+- https://github.com/facebookresearch
